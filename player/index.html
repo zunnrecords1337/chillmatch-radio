@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChillMatch Radio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0A0A0C;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 48px;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: #7C5CFC; }
+
+    .player-card {
+      background: #141416;
+      border: 1px solid #222;
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #1a1a1c;
+      border: 1px solid #333;
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #555;
+      transition: background 0.3s;
+    }
+    .live-dot.active { background: #FF4B4B; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .now-playing {
+      text-align: center;
+    }
+    .now-playing .label {
+      font-size: 11px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .now-playing .track {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .now-playing .artist {
+      font-size: 14px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .visualizer {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 32px;
+    }
+    .bar {
+      width: 4px;
+      background: #7C5CFC;
+      border-radius: 2px;
+      height: 4px;
+      transition: height 0.1s;
+    }
+    .playing .bar:nth-child(1) { animation: bar1 0.8s infinite; }
+    .playing .bar:nth-child(2) { animation: bar2 0.9s infinite; }
+    .playing .bar:nth-child(3) { animation: bar3 0.7s infinite; }
+    .playing .bar:nth-child(4) { animation: bar4 1.0s infinite; }
+    .playing .bar:nth-child(5) { animation: bar5 0.85s infinite; }
+    .playing .bar:nth-child(6) { animation: bar1 0.75s infinite; }
+    .playing .bar:nth-child(7) { animation: bar3 0.95s infinite; }
+
+    @keyframes bar1 { 0%,100%{height:4px} 50%{height:28px} }
+    @keyframes bar2 { 0%,100%{height:8px} 50%{height:20px} }
+    @keyframes bar3 { 0%,100%{height:12px} 50%{height:32px} }
+    @keyframes bar4 { 0%,100%{height:6px} 50%{height:24px} }
+    @keyframes bar5 { 0%,100%{height:16px} 50%{height:10px} }
+
+    .play-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #7C5CFC;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, background 0.2s;
+    }
+    .play-btn:hover { transform: scale(1.06); background: #6a4de0; }
+    .play-btn:active { transform: scale(0.96); }
+    .play-btn svg { width: 28px; height: 28px; fill: #fff; }
+
+    .volume-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .volume-row svg { width: 18px; height: 18px; fill: #555; flex-shrink: 0; }
+    input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #7C5CFC;
+      cursor: pointer;
+    }
+
+    .history {
+      width: 100%;
+      max-width: 420px;
+      margin-top: 32px;
+    }
+    .history h3 {
+      font-size: 13px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #141416;
+      border-radius: 12px;
+      border: 1px solid #1e1e20;
+    }
+    .history-item .h-track { font-size: 14px; font-weight: 600; color: #ddd; }
+    .history-item .h-artist { font-size: 12px; color: #666; margin-top: 2px; }
+    .history-item .h-time { font-size: 11px; color: #444; flex-shrink: 0; margin-left: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="logo">Chill<span>Match</span> Radio</div>
+
+  <div class="player-card">
+    <div class="live-badge">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveLabel">Offline</span>
+    </div>
+
+    <div class="now-playing">
+      <div class="label">Now Playing</div>
+      <div class="track" id="trackTitle">—</div>
+      <div class="artist" id="trackArtist"></div>
+    </div>
+
+    <div class="visualizer" id="visualizer">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+
+    <button class="play-btn" id="playBtn" onclick="togglePlay()">
+      <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+
+    <div class="volume-row">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+      <input type="range" id="volume" min="0" max="100" value="80" oninput="setVolume(this.value)" />
+    </div>
+  </div>
+
+  <div class="history">
+    <h3>Track History</h3>
+    <div class="history-list" id="historyList">
+      <div style="color:#444;font-size:13px;padding:12px 0">No history yet</div>
+    </div>
+  </div>
+
+  <audio id="audio" preload="none"></audio>
+
+  <script>
+    const STREAM_URL = 'ICECAST_STREAM_URL/stream';
+    const ICECAST_STATUS_URL = 'ICECAST_STREAM_URL/status-json.xsl';
+
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const visualizer = document.getElementById('visualizer');
+    const liveDot = document.getElementById('liveDot');
+    const liveLabel = document.getElementById('liveLabel');
+    const trackTitle = document.getElementById('trackTitle');
+    const trackArtist = document.getElementById('trackArtist');
+    const historyList = document.getElementById('historyList');
+
+    let isPlaying = false;
+    let history = [];
+    let lastTrack = '';
+
+    audio.volume = 0.8;
+
+    function togglePlay() {
+      if (isPlaying) {
+        audio.pause();
+        audio.src = '';
+        isPlaying = false;
+        playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        visualizer.classList.remove('playing');
+      } else {
+        audio.src = STREAM_URL + '?t=' + Date.now();
+        audio.play().catch(() => {});
+        isPlaying = true;
+        playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        visualizer.classList.add('playing');
+      }
+    }
+
+    function setVolume(v) {
+      audio.volume = v / 100;
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateHistory(title, artist) {
+      if (title === lastTrack) return;
+      lastTrack = title;
+
+      history.unshift({ title, artist, time: new Date() });
+      if (history.length > 20) history.pop();
+
+      historyList.innerHTML = history.map(h => `
+        <div class="history-item">
+          <div>
+            <div class="h-track">${h.title}</div>
+            ${h.artist ? `<div class="h-artist">${h.artist}</div>` : ''}
+          </div>
+          <div class="h-time">${formatTime(h.time)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function pollStatus() {
+      try {
+        const res = await fetch(ICECAST_STATUS_URL);
+        const data = await res.json();
+        const sources = data?.icestats?.source;
+        const source = Array.isArray(sources) ? sources[0] : sources;
+
+        if (source) {
+          liveDot.classList.add('active');
+          liveLabel.textContent = 'Live';
+
+          const title = source.title || source['stream-title'] || '';
+          const artist = source.artist || '';
+
+          if (title) {
+            const parts = title.split(' - ');
+            const t = parts.length > 1 ? parts.slice(1).join(' - ') : title;
+            const a = parts.length > 1 ? parts[0] : artist;
+            trackTitle.textContent = t;
+            trackArtist.textContent = a;
+            updateHistory(t, a);
+          }
+        } else {
+          liveDot.classList.remove('active');
+          liveLabel.textContent = 'Offline';
+          trackTitle.textContent = '—';
+          trackArtist.textContent = '';
+        }
+      } catch (e) {
+        liveDot.classList.remove('active');
+        liveLabel.textContent = 'Offline';
+      }
+    }
+
+    pollStatus();
+    setInterval(pollStatus, 10000);
+  </script>
+</body>
+</html>
