@@ -14,10 +14,10 @@
   </limits>
 
   <authentication>
-    <source-password>RADIOBOSS_SOURCE_PASSWORD</source-password>
-    <relay-password>relay_password_change_me</relay-password>
+    <source-password>kiruxA2212</source-password>
+    <relay-password>kiruxA2212</relay-password>
     <admin-user>admin</admin-user>
-    <admin-password>ADMIN_PASSWORD_CHANGE_ME</admin-password>
+    <admin-password>kiruxA2212</admin-password>
   </authentication>
 
   <hostname>localhost</hostname>
