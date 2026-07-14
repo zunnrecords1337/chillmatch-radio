@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Auth middleware
 app.use((req, res, next) => {
-  if (req.path === '/login' || req.path === '/login.html') return next();
+  if (!req.path.startsWith('/api')) return next();
   const auth = req.headers['x-admin-password'];
   if (auth !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
   next();
