@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChillMatch Radio — Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A0A0C; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-card { background: #141416; border: 1px solid #222; border-radius: 20px; padding: 40px; width: 320px; text-align: center; }
+    .login-card h2 { margin-bottom: 24px; font-size: 20px; }
+    .login-card input { width: 100%; padding: 12px 16px; background: #1e1e20; border: 1px solid #333; border-radius: 10px; color: #fff; font-size: 15px; margin-bottom: 12px; outline: none; }
+    .login-card button { width: 100%; padding: 12px; background: #7C5CFC; border: none; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    .app { display: none; }
+    header { background: #141416; border-bottom: 1px solid #1e1e20; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header span { color: #555; font-size: 13px; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+    .now-playing { background: #141416; border: 1px solid #222; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; }
+    .now-playing .live { width: 8px; height: 8px; background: #ff4b4b; border-radius: 50%; animation: pulse 1.5s infinite; flex-shrink: 0; }
+    .now-playing .info { flex: 1; }
+    .now-playing .track { font-size: 16px; font-weight: 600; }
+    .now-playing .sub { font-size: 13px; color: #666; margin-top: 2px; }
+    .skip-btn { background: #7C5CFC; border: none; border-radius: 10px; color: #fff; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .skip-btn:hover { background: #6a4de0; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .upload-zone { background: #141416; border: 2px dashed #2a2a2e; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px; cursor: pointer; transition: border-color 0.2s; }
+    .upload-zone:hover, .upload-zone.drag { border-color: #7C5CFC; }
+    .upload-zone .icon { font-size: 32px; margin-bottom: 8px; }
+    .upload-zone p { color: #666; font-size: 14px; }
+    .upload-zone strong { color: #aaa; }
+    .upload-progress { margin-top: 12px; display: none; }
+    .progress-bar { height: 4px; background: #222; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+    .progress-fill { height: 100%; background: #7C5CFC; width: 0%; transition: width 0.3s; }
+
+    .tracks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .tracks-header h3 { font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .search { background: #141416; border: 1px solid #222; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 13px; outline: none; width: 200px; }
+
+    .track-list { display: flex; flex-direction: column; gap: 2px; }
+    .track-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #141416; border: 1px solid #1e1e20; border-radius: 12px; transition: background 0.15s; }
+    .track-item:hover { background: #1a1a1c; }
+    .track-item.active { border-color: #7C5CFC; }
+    .track-num { font-size: 12px; color: #444; width: 24px; text-align: right; flex-shrink: 0; }
+    .track-name { flex: 1; font-size: 14px; color: #ddd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .play-track { background: #7C5CFC; border: none; border-radius: 8px; color: #fff; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .play-track:hover { background: #6a4de0; }
+    .del-track { background: #2a1a1a; border: none; border-radius: 8px; color: #ff4b4b; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+    .del-track:hover { background: #3a2020; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #7C5CFC; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h2>🎛️ Radio Admin</h2>
+    <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter')login()"/>
+    <button onclick="login()">Enter</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <header>
+    <h1>🎛️ ChillMatch Radio</h1>
+    <span id="trackCount">Loading...</span>
+  </header>
+
+  <div class="container">
+    <div class="now-playing">
+      <div class="live" id="liveDot"></div>
+      <div class="info">
+        <div class="track" id="nowTitle">Loading...</div>
+        <div class="sub" id="nowSub">ChillMatch Radio</div>
+      </div>
+      <button class="skip-btn" onclick="skip()">⏭ Skip</button>
+    </div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFiles(event)">
+      <div class="icon">🎵</div>
+      <p><strong>Click to upload</strong> or drag & drop</p>
+      <p>MP3, FLAC, OGG, WAV</p>
+      <div class="upload-progress" id="uploadProgress">
+        <p id="uploadStatus" style="font-size:13px;color:#aaa"></p>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+    </div>
+    <input type="file" id="fileInput" multiple accept="audio/*" style="display:none" onchange="uploadFiles(this.files)"/>
+
+    <div class="tracks-header">
+      <h3>Tracks</h3>
+      <input class="search" type="text" placeholder="Search..." oninput="filterTracks(this.value)"/>
+    </div>
+    <div class="track-list" id="trackList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let password = '';
+  let tracks = [];
+  let currentTrack = '';
+
+  function login() {
+    password = document.getElementById('passwordInput').value;
+    fetch('/api/tracks', { headers: { 'x-admin-password': password } })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        loadTracks();
+        pollStatus();
+        setInterval(pollStatus, 10000);
+      })
+      .catch(() => showToast('Wrong password'));
+  }
+
+  function api(url, opts = {}) {
+    return fetch(url, { ...opts, headers: { 'x-admin-password': password, 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  }
+
+  async function loadTracks() {
+    const res = await api('/api/tracks');
+    tracks = await res.json();
+    document.getElementById('trackCount').textContent = `${tracks.length} tracks`;
+    renderTracks(tracks);
+  }
+
+  function renderTracks(list) {
+    const el = document.getElementById('trackList');
+    el.innerHTML = list.map((t, i) => `
+      <div class="track-item ${t === currentTrack ? 'active' : ''}" id="track-${i}">
+        <span class="track-num">${i + 1}</span>
+        <span class="track-name" title="${t}">${t.replace(/\.(mp3|flac|ogg|wav)$/i, '')}</span>
+        <div class="track-actions">
+          <button class="play-track" onclick="playTrack('${t.replace(/'/g, "\\'")}')">▶ Play</button>
+          <button class="del-track" onclick="deleteTrack('${t.replace(/'/g, "\\'")}')">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterTracks(q) {
+    const filtered = tracks.filter(t => t.toLowerCase().includes(q.toLowerCase()));
+    renderTracks(filtered);
+  }
+
+  async function skip() {
+    await api('/api/skip', { method: 'POST' });
+    showToast('Skipped ⏭');
+  }
+
+  async function playTrack(name) {
+    await api('/api/play', { method: 'POST', body: JSON.stringify({ track: name }) });
+    currentTrack = name;
+    showToast(`Playing: ${name.replace(/\.(mp3|flac|ogg|wav)$/i, '')}`);
+    renderTracks(tracks);
+  }
+
+  async function deleteTrack(name) {
+    if (!confirm(`Delete "${name}"?`)) return;
+    await api(`/api/tracks/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    showToast('Deleted');
+    loadTracks();
+  }
+
+  async function pollStatus() {
+    try {
+      const res = await fetch('https://radio.chillmatch.app/status-json.xsl');
+      const data = await res.json();
+      const source = data?.icestats?.source;
+      if (source) {
+        const title = source.title || source.server_name || 'ChillMatch Radio';
+        document.getElementById('nowTitle').textContent = title;
+        document.getElementById('liveDot').style.background = '#ff4b4b';
+      } else {
+        document.getElementById('nowTitle').textContent = 'Offline';
+        document.getElementById('liveDot').style.background = '#444';
+      }
+    } catch {}
+  }
+
+  async function uploadFiles(files) {
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f);
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadStatus').textContent = `Uploading ${files.length} file(s)...`;
+    document.getElementById('progressFill').style.width = '30%';
+    const res = await fetch('/api/upload', { method: 'POST', headers: { 'x-admin-password': password }, body: fd });
+    const data = await res.json();
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('uploadStatus').textContent = `Uploaded: ${data.uploaded.join(', ')}`;
+    setTimeout(() => { document.getElementById('uploadProgress').style.display = 'none'; document.getElementById('progressFill').style.width = '0%'; }, 3000);
+    loadTracks();
+  }
+
+  function dragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag'); }
+  function dragLeave() { document.getElementById('uploadZone').classList.remove('drag'); }
+  function dropFiles(e) { e.preventDefault(); dragLeave(); uploadFiles(e.dataTransfer.files); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
