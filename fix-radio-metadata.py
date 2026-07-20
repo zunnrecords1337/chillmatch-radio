@@ -6,19 +6,15 @@ shutil.copy(f, f + '.bak')
 
 t = open(f).read()
 
-old = """const source = list.find(s => s.listenurl && s.listenurl.endsWith('/stream'))
-                    || list.find(s => s.listenurl && s.listenurl.endsWith('/fallback'))
-                    || list[0];"""
+# Add s.title check to first two find calls
+t = t.replace(
+    "list.find(s => s.listenurl && s.listenurl.endsWith('/stream'))",
+    "list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/stream'))\n                    || list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/fallback'))\n                    || list.find(s => s.listenurl && s.listenurl.endsWith('/stream'))",
+    1
+)
 
-new = """const source = list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/stream'))
-                    || list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/fallback'))
-                    || list.find(s => s.listenurl && s.listenurl.endsWith('/stream'))
-                    || list.find(s => s.listenurl && s.listenurl.endsWith('/fallback'))
-                    || list[0];"""
-
-if old in t:
-    t = t.replace(old, new)
+if "s.title && s.listenurl" in t:
     open(f, 'w').write(t)
     print('PATCHED OK')
 else:
-    print('OLD PATTERN NOT FOUND')
+    print('NOT PATCHED')
