@@ -6,10 +6,11 @@ shutil.copy(f, f + '.bak')
 
 t = open(f).read()
 
-old = "const source = Array.isArray(sources) ? sources[0] : sources;"
+old = """const source = list.find(s => s.listenurl && s.listenurl.endsWith('/stream'))
+                    || list.find(s => s.listenurl && s.listenurl.endsWith('/fallback'))
+                    || list[0];"""
 
-new = """const list = Array.isArray(sources) ? sources : (sources ? [sources] : []);
-        const source = list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/stream'))
+new = """const source = list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/stream'))
                     || list.find(s => s.title && s.listenurl && s.listenurl.endsWith('/fallback'))
                     || list.find(s => s.listenurl && s.listenurl.endsWith('/stream'))
                     || list.find(s => s.listenurl && s.listenurl.endsWith('/fallback'))
